@@ -12,52 +12,80 @@ class Player
 end
 
 # comment
-# module Moves
-	
-# 	class Moves
-# 		def initialize
-# 			@beats
-# 			@loses
-# 		end
-# 	end
-	
-# 	class Rocks < Moves
-# 		@beats = ['paper','spock']
-# 		@loses = ['scissors', 'lizard']
-# 	end
-		
-# end
-class Move
-  VALUES = %w[rocks paper scissors lizard spock].freeze
-  
-  LESSER_MOVES = { 'rocks' => %w[paper spock],
-                  'paper' => %w[lizard scissors],
-                  'scissors' => %w[spock rocks],
-                  'spock' => %w[paper lizard],
-                  'lizard' => %w[rocks scissors] }.freeze
 
-  GREATER_MOVES = { 'rocks' => %w[scissors lizard],
-                    'paper' => %w[rocks spock],
-                    'scissors' => %w[paper spock],
-                    'spock' => %w[rocks scissors],
-                    'lizard' => %w[spock paper] }.freeze
-
-  def initialize(value)
-    @value = value
-  end
-
-  def >(other)
-    GREATER_MOVES[@value].include?(other.to_s)
-  end
-
-  def <(other)
-    LESSER_MOVES[@value].include?(other.to_s)
-  end
-
-  def to_s
-    @value
+VALUES = %w[rocks paper scissors lizard spock].freeze
+# comment
+class Rocks
+  attr_reader :beats, :loses
+  def initialize
+    @beats = %w[paper spock]
+    @loses = %w[scissors lizard]
   end
 end
+# comment
+class Paper
+  attr_reader :beats, :loses
+  def initialize
+    @beats = %w[rocks spock]
+    @loses = %w[paper spock]
+  end
+end
+# comment
+class Scissors
+  attr_reader :beats, :loses
+  def initialize
+    @beats = %w[paper lizard]
+    @loses = %w[spock rocks]
+  end
+end
+# comment
+class Spock
+  attr_reader :beats, :loses
+  def initialize
+    @beats = %w[rocks scissors]
+    @loses = %w[paper lizard]
+  end
+end
+# comment
+class Lizard
+  attr_reader :beats, :loses
+  def initialize
+    @beats = %w[spock paper]
+    @loses = %w[rocks scissors]
+  end
+end
+
+# class Move
+#   VALUES = %w[rocks paper scissors lizard spock].freeze
+
+#   LESSER_MOVES = { 'rocks' => %w[paper spock],
+#                   'paper' => %w[lizard scissors],
+#                   'scissors' => %w[spock rocks],
+#                   'spock' => %w[paper lizard],
+#                   'lizard' => %w[rocks scissors] }.freeze
+
+#   GREATER_MOVES = { 'rocks' => %w[scissors lizard],
+#                     'paper' => %w[rocks spock],
+#                     'scissors' => %w[paper spock],
+#                     'spock' => %w[rocks scissors],
+#                     'lizard' => %w[spock paper] }.freeze
+
+#   def initialize(value)
+#     @value = value
+#   end
+
+#   def >(other)
+#     GREATER_MOVES[@value].include?(other.to_s)
+#   end
+
+#   def <(other)
+#     LESSER_MOVES[@value].include?(other.to_s)
+#   end
+
+#   def to_s
+#     @value
+#   end
+# end
 
 # comment
 class Human < Player
@@ -78,14 +106,13 @@ class Human < Player
     loop do
       puts 'please choose rocks, paper, scissors, lizard or spock'
       choice = gets.chomp
-      break if Move::VALUES.include?(choice)
+      break if VALUES.include?(choice)
 
       puts 'sorry, enter a valid choice'
     end
-    self.move = Move.new(choice)
+    self.move = Kernel.const_get(choice.capitalize).new
   end
 end
-
 # comment
 class Computer < Player
   def set_name
@@ -93,11 +120,11 @@ class Computer < Player
   end
 
   def choose
-  	if self.name == 'all_rocks'
-  		self.move = Move.new('rocks')
-  	else
-  		self.move = Move.new(Move::VALUES.sample)
-  	end
+    self.move = if name == 'all_rocks'
+                  Rocks.new
+                else
+                  Kernel.const_get(VALUES.sample.capitalize).new
+                end
   end
 end
 
@@ -119,14 +146,14 @@ class RPSGame
   end
 
   def display_moves
-    puts "#{human.name} choose #{human.move}"
-    puts "#{computer.name} choose #{computer.move}"
+    puts "#{human.name} choose #{human.move.class.to_s.downcase}"
+    puts "#{computer.name} choose #{computer.move.class.to_s.downcase}"
   end
 
   def display_winner
-    if human.move > computer.move
+    if human.move.beats.include?(computer.move.class.to_s.downcase)
       puts "#{human.name} won"
-    elsif human.move < computer.move
+    elsif computer.move.beats.include?(human.move.class.to_s.downcase)
       puts "#{computer.name} won"
     else
       puts "It's a tie"
@@ -134,9 +161,9 @@ class RPSGame
   end
 
   def increment_score
-    if human.move > computer.move
+    if human.move.beats.include?(computer.move.class.to_s.downcase)
       human.score += 1
-    elsif human.move < computer.move
+    elsif computer.move.beats.include?(human.move.class.to_s.downcase)
       computer.score += 1
     end
   end
