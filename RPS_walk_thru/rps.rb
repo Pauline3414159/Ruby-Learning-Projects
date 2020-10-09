@@ -1,20 +1,20 @@
 # frozen_string_literal: true
 
-VALUES = %w[rocks paper scissors lizard spock].freeze
+VALUES = %w[rock paper scissors lizard Spock].freeze
 
 # contains methods for comparing moves
 class Move
-  LESSER_MOVES = { 'rocks' => %w[paper spock],
+  LESSER_MOVES = { 'rock' => %w[paper Spock],
                    'paper' => %w[lizard scissors],
-                   'scissors' => %w[spock rocks],
-                   'spock' => %w[paper lizard],
-                   'lizard' => %w[rocks scissors] }.freeze
+                   'scissors' => %w[Spock rock],
+                   'Spock' => %w[paper lizard],
+                   'lizard' => %w[rock scissors] }.freeze
 
-  GREATER_MOVES = { 'rocks' => %w[scissors lizard],
-                    'paper' => %w[rocks spock],
-                    'scissors' => %w[paper spock],
-                    'spock' => %w[rocks scissors],
-                    'lizard' => %w[spock paper] }.freeze
+  GREATER_MOVES = { 'rock' => %w[scissors lizard],
+                    'paper' => %w[rock Spock],
+                    'scissors' => %w[paper Spock],
+                    'Spock' => %w[rock scissors],
+                    'lizard' => %w[Spock paper] }.freeze
 
   def initialize(value)
     @value = value
@@ -36,6 +36,7 @@ end
 # all possible players decend from this class
 class Player
   attr_accessor :move, :name, :score, :history
+
   def initialize
     @move = nil
     @score = 0
@@ -52,8 +53,7 @@ class Human < Player
 
   def set_name
     n = nil
-    puts '
-Enter your name:'
+    puts 'Enter your name:'
     loop do
       n = gets.chomp
       break unless n.empty? || n.include?(' ') || VALUES.include?(n.downcase)
@@ -66,14 +66,28 @@ Enter your name:'
   def choose
     choice = nil
     loop do
-      puts '
-Choose your move! Please choose from rocks, paper, scissors, lizard or spock.'
+      puts 'Choose your move! Please choose from (r)ock, (p)aper, (s)cissors, (l)izard or (S)pock.'
       choice = gets.chomp
-      break if VALUES.include?(choice)
+      break if VALUES.include?(choice) || %w[r p s l S].include?(choice)
 
       puts "That's not a move, try again. "
     end
-    self.move = choice
+    self.move = choice_validator(choice)
+  end
+
+  private
+
+  def choice_validator(choice)
+    if choice.size == 1
+      case choice
+      when 'r' then return 'rock'
+      when 'p' then return 'paper'
+      when 's' then return 'scissors'
+      when 'l' then return 'lizard'
+      when 'S' then return 'Spock'
+      end
+    end
+    choice
   end
 end
 
@@ -84,7 +98,7 @@ class Computer < Player
   end
 end
 
-# this computer player will always choose rocks and will talk about rocks
+# this computer player will always choose rock and will talk about rock
 class RockFacts < Computer
   def initialize
     super
@@ -92,17 +106,15 @@ class RockFacts < Computer
   end
 
   def choose
-    self.move = 'rocks'
+    self.move = 'rock'
   end
 
   def display_talk
-    puts "
-Rock Facts says :
-#{['Sedimentary rocks form layers at the bottoms of oceans and lakes.',
-		 'Rocks are usually grouped into three main groups:'\
- 		' igneous rocks, metamorphic rocks and sedimentary rocks.',
-		 'The scientific study of rocks is called petrology.'].sample
-}"
+    puts "Rock Facts says :
+    #{['Sedimentary rocks form layers at the bottoms of oceans and lakes.',
+		     'rocks are usually grouped into three main groups:'\
+     		' igneous rocks, metamorphic rocks and sedimentary rock.',
+		     'The scientific study of rock is called petrology.'].sample}"
   end
 end
 
@@ -114,16 +126,14 @@ class Herpetophobia < Computer
   end
 
   def choose
-    self.move = %w[rocks paper scissors spock].sample
+    self.move = %w[rock paper scissors Spock].sample
   end
 
   def display_talk
-    puts "
-#{name} says:
-#{['Herpetophobia is a common specific phobia,'\
+    puts "#{name} says:
+    #{['Herpetophobia is a common specific phobia,'\
 		'which consists of fear or aversion to reptiles.', 'Lizards are reptiles.',
-		 'Say no to lizards!'].sample
-} "
+		     'Say no to lizards!'].sample} "
   end
 end
 
@@ -136,44 +146,39 @@ class Ordinary < Computer
   end
 
   def display_talk
-    puts "
-#{name} says:
-#{['hola', 'hello.', 'konnichiwa.', 'good day.', 'buenos dios.'].sample}
-"
+    puts "#{name} says:
+    #{['hola', 'hello.', 'konnichiwa.', 'good day.', 'buenos dios.'].sample}"
   end
 end
 
 # contains display methods except for computer.display_talk
 module Displayable
   def display_welcome_message
-    puts 'Welcome to Rocks, Paper, and Scissors (and Lizards and Spock!)'
+    puts 'Welcome to rock, paper, and scissors (and lizard and Spock!)'
   end
 
   def display_goodbye_message
-    puts '
-Thanks for playing Rocks, Paper, and Scissors'\
-    '(and Lizards and Spock). Goodbye.'
+    puts 'Thanks for playing rock, paper, and scissors'\
+    '(and lizard and Spock). Goodbye.'
   end
 
   def display_moves
-    puts "
-#{human.name} choose #{human.move}"
-    puts "#{computer.name} choose #{computer.move}"
+    puts "#{human.name} choose #{human.move}."
+    puts "#{computer.name} choose #{computer.move}."
   end
 
   def display_human_win
-    puts "
-#{human.name} won !"
+    puts "#{human.name} won !"
+    sleep 1.5
   end
 
   def display_computer_win
-    puts "
-#{computer.name} won."
+    puts "#{computer.name} won."
+    sleep 1.5
   end
 
   def display_tie
-    puts "
-It's a tie."
+    puts "It's a tie."
   end
 
   def display_winner
@@ -187,26 +192,28 @@ It's a tie."
   end
 
   def display_score
-    puts "
-#{human.name}'s score is #{human.score}."
-    puts "#{computer.name}'s score is #{computer.score}.
-    "
+    puts "#{human.name}'s score is #{human.score}."
+    puts "#{computer.name}'s score is #{computer.score}."
   end
 
+  # rubocop:disable Metrics/MethodLength
   def display_rules
-    puts "
--whoever gets to 10 points first is the grand winner!
--rocks beats scissors or lizard, but loses to paper or spock
--paper beats rocks or spock, but loses to lizard or scissors
--scissors beasts paper or spock, but loses to spock or rocks
--spock beats rocks or scissors, but loses to paper or lizard
--lizard beats spock or paper, but loses to rocks or scissors
-		Let's start!"
+    clear_screen(0)
+    puts <<~MSG
+      -whoever gets to 10 points first is the grand winner!
+      -rock beats scissors or lizard, but loses to paper or Spock
+      -paper beats rock or Spock, but loses to lizard or scissors
+      -scissors beasts paper or Spock, but loses to Spock or rock
+      -Spock beats rock or scissors, but loses to paper or lizard
+      -lizard beats Spock or paper, but loses to rock or scissors
+      		Let's start!
+    MSG
+    sleep 6
   end
 
+  # rubocop:enable Metrics/MethodLength
   def display_human_hx(int)
-    "
-#{human.name} chose #{human.history[int]}, while"
+    "#{human.name} chose #{human.history[int]}, while"
   end
 
   def display_comp_hx(int)
@@ -214,9 +221,11 @@ It's a tie."
   end
 
   def display_history
+    clear_screen(0)
     size = human.history.size
     (0...size).each do |idx|
       puts display_human_hx(idx) + ' ' + display_comp_hx(idx)
+      sleep 1.5
     end
   end
 
@@ -226,11 +235,24 @@ It's a tie."
     elsif computer.score > 9
       puts "#{computer.name} is the grand winner!"
     end
+    sleep 3
   end
 end
 
-# contains methods that return a true or false, like play_again?
-module Booleanable
+# contains  game engine
+class RPSGame
+  include Displayable
+
+  attr_accessor :human, :computer
+
+  def initialize
+    @human = Human.new
+    @computer = [Herpetophobia, Ordinary, RockFacts].sample.new
+  end
+
+  private
+
+  # start of true/false methods --------------------------------------
   def grand_winner?
     human.score > 9 || computer.score > 9
   end
@@ -238,8 +260,7 @@ module Booleanable
   def display_rules?
     answer = nil
     loop do
-      puts '
-Would you like to read the rules? (y/n)'
+      puts 'Would you like to read the rules? (y/n)'
       answer = gets.chomp.downcase
       break if %w[y n].include?(answer)
 
@@ -263,8 +284,7 @@ Would you like to read the rules? (y/n)'
   def see_history?
     answer = nil
     loop do
-      puts '
-Would you like to see the log of moves? (y/n)'
+      puts 'Would you like to see the log of moves? (y/n)'
       answer = gets.chomp.downcase
       break if %w[y n].include?(answer)
 
@@ -272,18 +292,12 @@ Would you like to see the log of moves? (y/n)'
     end
     answer == 'y'
   end
-end
 
-# contains  game engine
-class RPSGame
-  include Displayable
-  include Booleanable
+  # end of true/false methods -----------------------------------
 
-  attr_accessor :human, :computer
-
-  def initialize
-    @human = Human.new
-    @computer = [Herpetophobia, Ordinary, RockFacts].sample.new
+  def clear_screen(sec)
+    sleep sec
+    system('clear') || system('cls')
   end
 
   def move_history
@@ -301,41 +315,47 @@ class RPSGame
 
   def pre_game
     display_welcome_message
+    clear_screen(2)
     display_rules if display_rules?
+    clear_screen(1.5)
     human.set_name
+    clear_screen(1.5)
+    computer.display_talk
   end
 
   def post_game
+    clear_screen(1)
     display_history if see_history?
     display_goodbye_message
   end
 
   def one_round
-    computer.display_talk
+    clear_screen(1.5)
     human.choose
     computer.choose
     move_history
     display_moves
+    clear_screen(2)
     display_winner
     increment_score
   end
 
-# rubocop:disable all
-  # 11/10 lines is close enough for me
+  public
+
+
   def play
     pre_game
     loop do
       one_round
-      if grand_winner?
-        display_grand_winner
-        break
-      end
+      clear_screen(2)
+      break display_grand_winner if grand_winner?
       display_score
+      clear_screen(3)
       break unless play_again?
     end
     post_game
   end
-# rubocop:enable all
+
 end
 
 RPSGame.new.play
