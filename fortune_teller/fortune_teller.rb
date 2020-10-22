@@ -9,6 +9,10 @@ class Section
 		@fortune = fortune
 	end
 	
+	def to_s
+		@fortune
+	end
+	
 end
 
 # is boss of section, holds two arrays of sections, also creates the arrays
@@ -59,5 +63,84 @@ class FortuneCatcher
 		(group_all - group_one).each { |section| group_two << section }
 	end
 	
-	
 end
+
+# orchestration brings the use of the fortune catcher together
+class Orchestration
+	
+	attr_accessor :question, :group
+	
+	def initialize
+		@catcher = FortuneCatcher.new
+		@question = nil
+		@group = nil
+	end
+	
+	def use
+		ask_question
+		choose_group == true ? @group = @catcher.group_one : @group = @catcher.group_two
+		change_group if change_group?
+		display_fortune(choose_fortune)
+	end
+	
+	private
+	def ask_question
+		puts "Enter your question"
+		ans = nil
+		loop do
+			ans = gets.chomp
+			break if ans.include?('?')
+			puts "Remember to include a question mark at the end of your question"
+		end
+		@question = ans
+	end
+	
+	def choose_group
+		puts "Choose 1 or 2"
+		ans = nil
+		loop do
+			ans = gets.chomp.to_i
+			break if [1,2].include?(ans)
+			puts "enter 1 or 2"
+		end
+		ans == 1
+	end
+	
+	def change_group?
+		numbers = group.collect(&:number)
+		puts "Pick a number: (#{numbers.join(' ')})"
+		ans = nil
+		loop do
+			ans = gets.chomp.to_i
+			break if numbers.include?(ans)
+			puts "Enter a valid number"
+		end
+		ans.odd?
+	end
+	
+	def change_group
+		group == @catcher.group_one ? @group = @catcher.group_two : @group = @catcher.group_one
+	end
+	
+	def choose_fortune
+		numbers = group.collect(&:number)
+		puts "Pick a number: (#{numbers.join(' ')})"
+		ans = nil
+		loop do
+			ans = gets.chomp.to_i
+			break if numbers.include?(ans)
+			puts "Enter a valid number"
+		end
+		ans
+	end
+	
+	def display_fortune(num)
+		choice = group.select { |section| section.number == num}
+		puts "#{choice.first.fortune}"
+	end
+end
+
+test = Orchestration.new
+
+test.use
+
