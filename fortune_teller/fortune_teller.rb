@@ -1,3 +1,4 @@
+require 'pry'
 # section has a number to id, and a fortune to display. It is collaberator
 # to FortuneCatcher
 class Section
@@ -8,11 +9,7 @@ class Section
 		@number = number
 		@fortune = fortune
 	end
-	
-	def to_s
-		@fortune
-	end
-	
+
 end
 
 # is boss of section, holds two arrays of sections, also creates the arrays
@@ -77,15 +74,25 @@ class Orchestration
 	end
 	
 	def use
-		ask_question
-		choose_group == true ? @group = @catcher.group_one : @group = @catcher.group_two
-		change_group if change_group?
-		display_fortune(choose_fortune)
+		display_welcome_message
+		loop do
+			ask_question
+			choose_group == true ? @group = @catcher.group_one : @group = @catcher.group_two
+			change_group if change_group?
+			display_fortune(choose_fortune)
+			break if exit? == true
+		end
+		display_goodbye_msg
 	end
 	
 	private
+	
+	def clear_screen
+		system 'clear' || (system 'clr')
+	end
+	
 	def ask_question
-		puts "Enter your question"
+		puts "Enter your question about the future."
 		ans = nil
 		loop do
 			ans = gets.chomp
@@ -96,17 +103,19 @@ class Orchestration
 	end
 	
 	def choose_group
-		puts "Choose 1 or 2"
+		clear_screen
+		puts "Choose (h)eads or (t)ails."
 		ans = nil
 		loop do
-			ans = gets.chomp.to_i
-			break if [1,2].include?(ans)
-			puts "enter 1 or 2"
+			ans = gets.chomp.downcase
+			break if %w[h t].include?(ans)
+			puts "enter h or t"
 		end
-		ans == 1
+		ans == 'h'
 	end
 	
 	def change_group?
+		clear_screen
 		numbers = group.collect(&:number)
 		puts "Pick a number: (#{numbers.join(' ')})"
 		ans = nil
@@ -123,6 +132,7 @@ class Orchestration
 	end
 	
 	def choose_fortune
+		clear_screen
 		numbers = group.collect(&:number)
 		puts "Pick a number: (#{numbers.join(' ')})"
 		ans = nil
@@ -135,9 +145,36 @@ class Orchestration
 	end
 	
 	def display_fortune(num)
+		clear_screen
+		puts "The answer is ..."
+		sleep 0.5
 		choice = group.select { |section| section.number == num}
 		puts "#{choice.first.fortune}"
 	end
+	
+	def exit?
+		puts "(e)xit?"
+		ans = nil
+		loop do
+			ans = gets.chomp.downcase
+			break if %w[e y n].include?(ans)
+			puts "Enter e or y to exit, or n to continue."
+		end
+		#binding.pry
+		%w[e y].include?(ans)
+	end
+	
+	def display_goodbye_msg
+		clear_screen
+		sleep 2
+		puts "Thank you for using Fortune Teller Catcher! Goodbye."
+		sleep 1
+	end
+	
+	def display_welcome_message
+		puts "Welcome to Fortune Teller Catcher! Find out your FUTURE11!11!"
+	end
+	
 end
 
 test = Orchestration.new
