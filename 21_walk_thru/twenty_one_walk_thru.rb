@@ -27,8 +27,10 @@ class Deck
 	def initialize
 		@draw_pile = []
 		create_deck
+		shuffle_deck
 	end
 	
+	private
 	def create_deck
 		SUITES.each do |suite|
 			counter = 0
@@ -39,5 +41,63 @@ class Deck
 		end
 	end
 	
+	def shuffle_deck
+		draw_pile.shuffle!
+	end
+	
+	public
+	def take_cards(num)
+		draw_pile.pop(num)
+	end
+	
 end
 
+# the participants
+class Participants
+	
+	attr_accessor :name, :hand
+	
+	def initialize(name)
+		@name = name
+		@hand = []
+	end
+end
+
+# the game engine orchestrates the game
+class GameEngine
+	
+	attr_accessor :deck, :player, :dealer
+	
+	def initialize
+		@deck = Deck.new
+		@player = Participants.new(player_name)
+		@dealer = Participants.new('dealer')
+	end
+	
+	def play
+		deal_initial_hands
+	end
+	
+	private
+	
+	def player_name
+		ans = nil
+		puts "What's your name?"
+		loop do
+			ans = gets.chomp.capitalize
+			break if ans.chars.all?(/\w/)
+			puts "only enter letters, numbers, or underscore"
+		end
+		ans
+	end
+	
+	def deal_initial_hands
+		deck.take_cards(2).each { |card| player.hand << card }
+		deck.take_cards(2). each { |card| dealer.hand << card }
+	end
+	
+end
+
+test = GameEngine.new
+
+test.play
