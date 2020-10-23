@@ -22,7 +22,7 @@ class Deck
 	
 	SUITES = %w[Clubs Hearts Diamonds Spades].freeze
 	FACE_NAMES = %w[2 3 4 5 6 7 8 9 10 Jack King Queen Ace].freeze
-	VALUES = [2, 3, 4, 5, 7, 8, 9, 10, 10, 10, 10, 1].freeze
+	VALUES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 1].freeze
 	
 	def initialize
 		@draw_pile = []
@@ -61,6 +61,13 @@ class Participants
 		@name = name
 		@hand = []
 	end
+	
+	def value
+		hand.map do |card|
+			card.value
+		end.sum
+	end
+	
 end
 
 # the game engine orchestrates the game
@@ -76,6 +83,9 @@ class GameEngine
 	
 	def play
 		deal_initial_hands
+		display_dealer_hand
+		display_player_hand
+		display_player_hand_value
 	end
 	
 	private
@@ -96,8 +106,31 @@ class GameEngine
 		deck.take_cards(2). each { |card| dealer.hand << card }
 	end
 	
+	def display_dealer_hand
+		puts "Dealer has a #{dealer.hand[0]} and one hidden card."
+	end
+	
+	def display_player_hand
+		puts "#{player.name} has a #{player.hand[0..-2].join(', ')} and a #{player.hand[-1]}."
+	end
+	
+	def display_player_hand_value
+		puts "#{player.name}'s hand has a value of #{player.value}."
+	end
+	
+	def player_hit?
+		ans = nil
+		puts "(h)it or (s)tay?"
+		loop do
+			ans = gets.chomp.downcase
+			break if %w[h s].include?(ans)
+			puts "Please enter h or s."
+		end
+		ans == 'h'
+	
 end
 
 test = GameEngine.new
 
 test.play
+
