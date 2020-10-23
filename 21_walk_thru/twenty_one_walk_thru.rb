@@ -22,7 +22,7 @@ class Deck
 	
 	SUITES = %w[Clubs Hearts Diamonds Spades].freeze
 	FACE_NAMES = %w[2 3 4 5 6 7 8 9 10 Jack King Queen Ace].freeze
-	VALUES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 1].freeze
+	VALUES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 1].freeze
 	
 	def initialize
 		@draw_pile = []
@@ -55,11 +55,12 @@ end
 # the participants
 class Participants
 	
-	attr_accessor :name, :hand
+	attr_accessor :name, :hand, :score
 	
 	def initialize(name)
 		@name = name
 		@hand = []
+		@score = 0
 	end
 	
 	def value
@@ -83,9 +84,8 @@ class GameEngine
 	
 	def play
 		deal_initial_hands
-		display_dealer_hand
-		display_player_hand
-		display_player_hand_value
+		player_turn
+		dealer_turn
 	end
 	
 	private
@@ -110,8 +110,8 @@ class GameEngine
 		puts "Dealer has a #{dealer.hand[0]} and one hidden card."
 	end
 	
-	def display_player_hand
-		puts "#{player.name} has a #{player.hand[0..-2].join(', ')} and a #{player.hand[-1]}."
+	def display_full_hand(participant)
+		puts "#{participant.name} has a #{participant.hand[0..-2].join(', ')} and a #{participant.hand[-1]}."
 	end
 	
 	def display_player_hand_value
@@ -127,6 +127,36 @@ class GameEngine
 			puts "Please enter h or s."
 		end
 		ans == 'h'
+	end
+	
+	def player_turn
+		display_dealer_hand
+		loop do
+			display_player_hand
+			display_player_hand_value
+			if bust?(player.value)
+				bust(player)
+				break
+			end
+			player_hit? == true ? hit(player) : break
+		end
+	end
+	
+	def hit(participant)
+		deck.take_cards(1).each { |card| participant.hand << card }
+	end
+	
+	def over?(num, hand_val)
+		num < hand_val
+	end
+	
+	def bust?(hand_val)
+		over?(21, hand_val)
+	end
+	
+	def bust(participant)
+		puts " #{participant.name} has busted."
+	end
 	
 end
 
@@ -134,3 +164,4 @@ test = GameEngine.new
 
 test.play
 
+p test.player.hand
