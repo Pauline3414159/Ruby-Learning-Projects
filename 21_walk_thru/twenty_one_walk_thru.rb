@@ -78,17 +78,34 @@ class GameEngine
 	
 	def initialize
 		@deck = Deck.new
-		@player = Participants.new(player_name)
-		@dealer = Participants.new('dealer')
+		@player = Participants.new('')
+		@dealer = Participants.new('Dealer')
 	end
 	
 	def play
+		pre_game
+		@player.name = player_name
 		deal_initial_hands
 		player_turn
+		if bust?(player.value)
+			increment_score(dealer)
+		end
 		dealer_turn
+		if bust?(dealer.value)
+			increment_score(player)
+		end
+		display_scores
 	end
 	
 	private
+	
+	def pre_game
+		welcome_msg
+	end
+	
+	def welcome_msg
+		puts "Welcome to 21!"
+	end
 	
 	def player_name
 		ans = nil
@@ -99,6 +116,15 @@ class GameEngine
 			puts "only enter letters, numbers, or underscore"
 		end
 		ans
+	end
+	
+	def increment_score(participant)
+		participant.score += 1
+	end
+	
+	def display_scores
+		puts "#{player.name}'s score is #{player.score}."
+		puts "Dealer's score is #{dealer.score}."
 	end
 	
 	def deal_initial_hands
@@ -118,6 +144,22 @@ class GameEngine
 		puts "#{player.name}'s hand has a value of #{player.value}."
 	end
 	
+	def another_round?
+		puts "Would you like to play another round? (y/n)"
+		ans = nil
+		loop do
+			ans = gets.chomp.downcase
+			break if %w[y n].include?(ans)
+			puts "Enter y to play again or n to exit."
+		end
+		ans == 'y'
+	end
+	
+	def reset
+		player.hand.each { |card| deck.draw_pile << card }
+		puts "#{player.hand}"
+	end
+	
 	def player_hit?
 		ans = nil
 		puts "(h)it or (s)tay?"
@@ -132,13 +174,24 @@ class GameEngine
 	def player_turn
 		display_dealer_hand
 		loop do
-			display_player_hand
+			display_full_hand(player)
 			display_player_hand_value
 			if bust?(player.value)
 				bust(player)
 				break
 			end
 			player_hit? == true ? hit(player) : break
+		end
+	end
+	
+	def dealer_turn
+		loop do
+			display_full_hand(dealer)
+			if bust?(dealer.value)
+				bust(dealer)
+				break
+			end
+			over?(17, dealer.value) == false ? hit(dealer) : break
 		end
 	end
 	
@@ -155,7 +208,7 @@ class GameEngine
 	end
 	
 	def bust(participant)
-		puts " #{participant.name} has busted."
+		puts "#{participant.name} has busted."
 	end
 	
 end
