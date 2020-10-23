@@ -34,18 +34,18 @@ class Deck
 	def create_deck
 		SUITES.each do |suite|
 			counter = 0
-			until counter == FACE_NAMES.size - 1
+			until counter == FACE_NAMES.size
 			draw_pile << Card.new(suite, FACE_NAMES[counter], VALUES[counter])
 			counter += 1
 			end
 		end
 	end
 	
+	public
 	def shuffle_deck
 		draw_pile.shuffle!
 	end
 	
-	public
 	def take_cards(num)
 		draw_pile.pop(num)
 	end
@@ -64,9 +64,26 @@ class Participants
 	end
 	
 	def value
-		hand.map do |card|
+		number_of_aces = num_of_ace
+		if number_of_aces == 0
+			non_ace_value
+		elsif
+
+	#  if non_ace_card_value <= (10 - (num_of_ace - 1))
+  #   total_ace_value = 11 + (num_of_ace - 1)
+  # else
+  #   total_ace_value = num_of_ace
+  # end
+	end
+	
+	def non_ace_value
+		hand.select { |card| card.face_name != 'Ace'}.map do |card|
 			card.value
 		end.sum
+	end
+	
+	def num_of_ace
+		hand.select { |card| card.face_name == 'Ace'}.size
 	end
 	
 end
@@ -85,19 +102,69 @@ class GameEngine
 	def play
 		pre_game
 		@player.name = player_name
-		deal_initial_hands
-		player_turn
-		if bust?(player.value)
-			increment_score(dealer)
-		end
-		dealer_turn
-		if bust?(dealer.value)
-			increment_score(player)
-		end
-		display_scores
+		loop do
+			deal_initial_hands
+			player_turn
+			if bust?(player.value)
+				increment_score(dealer)
+				display_scores
+				if another_round? == true
+					reset
+					next
+				else
+					break
+				end
+			end
+			dealer_turn
+			if bust?(dealer.value)
+				increment_score(player)
+				display_scores
+				if another_round? == true
+					reset
+					next
+				else
+					break
+				end
+			end
+			if tie?
+				display_scores
+				if another_round? == true
+					reset
+					next
+				else
+					break
+				end
+			else
+				increment_score(winner)
+				display_scores
+				if another_round? == true
+					reset
+					next
+				else
+					break
+				end
+			end
+	  end
+		post_game
 	end
 	
 	private
+	
+	def winner
+		(21 - player.value) < (21 - dealer.value) ? player : dealer
+	end
+	
+	def tie?
+		player.value == dealer.value
+	end
+	
+	def tie
+		puts "It's a tie."
+	end
+	
+	def post_game
+		puts "Thanks for playing 21! Goodbye."
+	end
 	
 	def pre_game
 		welcome_msg
@@ -156,8 +223,9 @@ class GameEngine
 	end
 	
 	def reset
-		player.hand.each { |card| deck.draw_pile << card }
-		puts "#{player.hand}"
+		player.hand.pop(player.hand.size).each { |card| deck.draw_pile << card }
+		dealer.hand.pop(dealer.hand.size).each { |card| deck.draw_pile << card }
+		deck.shuffle_deck
 	end
 	
 	def player_hit?
@@ -213,8 +281,13 @@ class GameEngine
 	
 end
 
-test = GameEngine.new
+#test = GameEngine.new
 
-test.play
+#test.play
 
-p test.player.hand
+m = Deck.new
+
+pauline = Participants.new('ppp')
+pauline.hand = m.take_cards(5) 
+puts pauline.hand
+p pauline.num_of_ace
