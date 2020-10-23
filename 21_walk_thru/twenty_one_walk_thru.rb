@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'pry'
+# frozen_string_literal: true
+
 # cards have a suite, a facename, and a value. they are collaberator object
 # to the deck
 class Card
@@ -68,15 +71,15 @@ class Participants
     number_of_aces = num_of_ace
     if number_of_aces.zero?
       non_ace_value
-    elsif non_ace_value <= (10 - (number_of_aces - 1))
+    elsif non_ace_value < (10 - (number_of_aces - 1))
       11 + (num_of_ace - 1)
     else
       non_ace_value + number_of_aces
     end
   end
-  
-  def busted?
-  	value > 21
+
+  def check_for_bust
+    @is_busted = true if value > 21
   end
 
   private
@@ -90,8 +93,13 @@ class Participants
   end
 end
 
+# contains all the display messages
 module Displayable
   private
+
+  def display_bust(participant)
+    puts "#{participant.name} has busted."
+  end
 
   def display_scores
     puts "#{player.name}'s score is #{player.score}."
@@ -99,11 +107,11 @@ module Displayable
   end
 
   def display_dealer_hand
-    puts "Dealer has a #{dealer.hand[0]} and one hidden card."
+    puts "Dealer's has a #{dealer.hand[0]} and one hidden card."
   end
 
   def display_full_hand(participant)
-    puts "#{participant.name} has a #{participant.hand[0..-2].join(', ')} and a #{participant.hand[-1]}."
+    puts "#{participant.name}'s hand has a #{participant.hand[0..-2].join(', ')} and a #{participant.hand[-1]}."
   end
 
   def display_hand_value(participant)
@@ -113,39 +121,58 @@ module Displayable
   def display_welcome_msg
     puts 'Welcome to 21!'
   end
+
+  def display_hands_and_scores
+    display_hand_value(player)
+    display_hand_value(dealer)
+    display_scores
+  end
+
+  def display_hands_and_scores_with_winner
+    display_hand_value(player)
+    display_hand_value(dealer)
+    increment_score(winner)
+    display_scores
+  end
+end
+
+# contains pregame methods
+module Pregameable
+  private
+
+  def pre_game
+    display_welcome_msg
+  end
 end
 
 # the game engine orchestrates the game
 class GameEngine
   include Displayable
-  attr_accessor :deck, :player, :dealer
+  include Pregameable
+  attr_accessor :deck, :player, :dealer, :is_anyone_busted
 
   def initialize
     @deck = Deck.new
     @player = Participants.new('')
     @dealer = Participants.new('Dealer')
+    @is_anyone_busted = false
   end
 
   def play
     pre_game
     @player.name = player_name
-    loop do
+    loop do # main game loop
       deal_initial_hands
-      player_turn
-      if bust?(player.value)
-        increment_score(dealer)
-        display_scores
-        if another_round? == true
-          reset
-          next
-        else
-          break
-        end
+      loop do # exit to win eval loop
+        player_turn
+        player_busted if player.is_busted == true
+        break if is_anyone_busted == true
+
+        dealer_turn
+        dealer_busted if dealer.is_busted == true
+        break
       end
-      dealer_turn
-      if bust?(dealer.value)
-        increment_score(player)
-        display_scores
+      if is_anyone_busted == true
         if another_round? == true
           reset
           next
@@ -154,9 +181,7 @@ class GameEngine
         end
       end
       if tie?
-        display_hand_value(player)
-        display_hand_value(dealer)
-        display_scores
+        display_hands_and_scores
         if another_round? == true
           reset
           next
@@ -164,10 +189,7 @@ class GameEngine
           break
         end
       else
-        display_hand_value(player)
-        display_hand_value(dealer)
-        increment_score(winner)
-        display_scores
+        display_hands_and_scores_with_winner
         if another_round? == true
           reset
           next
@@ -180,8 +202,20 @@ class GameEngine
   end
 
   private
-  
-  
+
+  def player_busted
+    display_bust(player)
+    increment_score(dealer)
+    display_scores
+    @is_anyone_busted = true
+  end
+
+  def dealer_busted
+    display_bust(dealer)
+    increment_score(player)
+    display_scores
+    @is_anyone_busted = true
+  end
 
   def winner
     (21 - player.value) < (21 - dealer.value) ? player : dealer
@@ -197,10 +231,6 @@ class GameEngine
 
   def post_game
     puts 'Thanks for playing 21! Goodbye.'
-  end
-
-  def pre_game
-    display_welcome_msg
   end
 
   def player_name
@@ -237,9 +267,20 @@ class GameEngine
   end
 
   def reset
+    reset_deck
+    reset_busted_states
+  end
+
+  def reset_deck
     player.hand.pop(player.hand.size).each { |card| deck.draw_pile << card }
     dealer.hand.pop(dealer.hand.size).each { |card| deck.draw_pile << card }
     deck.shuffle_deck
+  end
+
+  def reset_busted_states
+    @is_anyone_busted = false
+    player.is_busted = false
+    dealer.is_busted = false
   end
 
   def player_hit?
@@ -259,10 +300,9 @@ class GameEngine
     loop do
       display_full_hand(player)
       display_hand_value(player)
-      if bust?(player.value)
-        bust(player)
-        break
-      end
+      player.check_for_bust
+      break if player.is_busted
+
       player_hit? == true ? hit(player) : break
     end
   end
@@ -270,28 +310,15 @@ class GameEngine
   def dealer_turn
     loop do
       display_full_hand(dealer)
-      if bust?(dealer.value)
-        bust(dealer)
-        break
-      end
-      over?(17, dealer.value) == false ? hit(dealer) : break
+      dealer.check_for_bust
+      break if dealer.is_busted
+
+      dealer.value > 17 == false ? hit(dealer) : break
     end
   end
 
   def hit(participant)
     deck.take_cards(1).each { |card| participant.hand << card }
-  end
-
-  def over?(num, hand_val)
-    num < hand_val
-  end
-
-  def bust?(hand_val)
-    over?(21, hand_val)
-  end
-
-  def bust(participant)
-    puts "#{participant.name} has busted."
   end
 end
 
