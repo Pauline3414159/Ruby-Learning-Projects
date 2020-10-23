@@ -67,15 +67,14 @@ class Participants
 		number_of_aces = num_of_ace
 		if number_of_aces == 0
 			non_ace_value
-		elsif
-
-	#  if non_ace_card_value <= (10 - (num_of_ace - 1))
-  #   total_ace_value = 11 + (num_of_ace - 1)
-  # else
-  #   total_ace_value = num_of_ace
-  # end
+		elsif non_ace_value <= (10 - (number_of_aces - 1))
+			11 + (num_of_ace - 1)
+		else
+			non_ace_value + number_of_aces
+		end
 	end
-	
+
+	private
 	def non_ace_value
 		hand.select { |card| card.face_name != 'Ace'}.map do |card|
 			card.value
@@ -127,6 +126,8 @@ class GameEngine
 				end
 			end
 			if tie?
+				display_hand_value(player)
+				display_hand_value(dealer)
 				display_scores
 				if another_round? == true
 					reset
@@ -135,6 +136,8 @@ class GameEngine
 					break
 				end
 			else
+				display_hand_value(player)
+				display_hand_value(dealer)
 				increment_score(winner)
 				display_scores
 				if another_round? == true
@@ -207,8 +210,8 @@ class GameEngine
 		puts "#{participant.name} has a #{participant.hand[0..-2].join(', ')} and a #{participant.hand[-1]}."
 	end
 	
-	def display_player_hand_value
-		puts "#{player.name}'s hand has a value of #{player.value}."
+	def display_hand_value(participant)
+		puts "#{participant.name}'s hand has a value of #{participant.value}."
 	end
 	
 	def another_round?
@@ -243,7 +246,7 @@ class GameEngine
 		display_dealer_hand
 		loop do
 			display_full_hand(player)
-			display_player_hand_value
+			display_hand_value(player)
 			if bust?(player.value)
 				bust(player)
 				break
@@ -281,13 +284,7 @@ class GameEngine
 	
 end
 
-#test = GameEngine.new
+test = GameEngine.new
 
-#test.play
+test.play
 
-m = Deck.new
-
-pauline = Participants.new('ppp')
-pauline.hand = m.take_cards(5) 
-puts pauline.hand
-p pauline.num_of_ace
