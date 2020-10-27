@@ -122,17 +122,16 @@ module Displayable
     puts 'Welcome to 21!'
   end
 
-  def display_hands_and_scores
-    display_hand_value(player)
-    display_hand_value(dealer)
-    display_scores
+  def display_winner(participant)
+    puts "#{participant.name} has won the round!"
   end
 
-  def display_hands_and_scores_with_winner
-    display_hand_value(player)
-    display_hand_value(dealer)
-    increment_score(winner)
-    display_scores
+  def display_tie
+    puts "It's a tie"
+  end
+
+  def display_goodbye
+    puts 'Thanks for playing 21! Goodbye.'
   end
 end
 
@@ -155,7 +154,6 @@ class GameEngine
     @deck = Deck.new
     @player = Participants.new('')
     @dealer = Participants.new('Dealer')
-    @is_anyone_busted = false
   end
 
   def play
@@ -163,75 +161,17 @@ class GameEngine
     @player.name = player_name
     loop do # main game loop
       deal_initial_hands
-      loop do # exit to win eval loop
-        player_turn
-        player_busted if player.is_busted == true
-        break if is_anyone_busted == true
+      player_turn
+      dealer_turn if player.is_busted == false
+      end_of_round
+      break unless another_round? == true
 
-        dealer_turn
-        dealer_busted if dealer.is_busted == true
-        break
-      end
-      if is_anyone_busted == true
-        if another_round? == true
-          reset
-          next
-        else
-          break
-        end
-      end
-      if tie?
-        display_hands_and_scores
-        if another_round? == true
-          reset
-          next
-        else
-          break
-        end
-      else
-        display_hands_and_scores_with_winner
-        if another_round? == true
-          reset
-          next
-        else
-          break
-        end
-      end
+      reset
     end
-    post_game
+    display_goodbye
   end
 
   private
-
-  def player_busted
-    display_bust(player)
-    increment_score(dealer)
-    display_scores
-    @is_anyone_busted = true
-  end
-
-  def dealer_busted
-    display_bust(dealer)
-    increment_score(player)
-    display_scores
-    @is_anyone_busted = true
-  end
-
-  def winner
-    (21 - player.value) < (21 - dealer.value) ? player : dealer
-  end
-
-  def tie?
-    player.value == dealer.value
-  end
-
-  def tie
-    puts "It's a tie."
-  end
-
-  def post_game
-    puts 'Thanks for playing 21! Goodbye.'
-  end
 
   def player_name
     ans = nil
@@ -245,13 +185,62 @@ class GameEngine
     ans
   end
 
-  def increment_score(participant)
-    participant.score += 1
-  end
-
   def deal_initial_hands
     deck.take_cards(2).each { |card| player.hand << card }
     deck.take_cards(2). each { |card| dealer.hand << card }
+  end
+
+  def player_turn
+    display_dealer_hand
+    loop do
+      display_full_hand(player)
+      display_hand_value(player)
+      player.check_for_bust
+      break if player.is_busted
+
+      player_hit? == true ? hit(player) : break
+    end
+  end
+
+  def player_hit?
+    ans = nil
+    puts '(h)it or (s)tay?'
+    loop do
+      ans = gets.chomp.downcase
+      break if %w[h s].include?(ans)
+
+      puts 'Please enter h or s.'
+    end
+    ans == 'h'
+  end
+
+  def dealer_turn
+    loop do
+      display_full_hand(dealer)
+      dealer.check_for_bust
+      break if dealer.is_busted
+
+      dealer.value > 17 == false ? hit(dealer) : break
+    end
+  end
+
+  def end_of_round
+    round_evaluation
+    display_scores
+  end
+
+  def round_evaluation
+    if player.is_busted
+      busted(player)
+    elsif dealer.is_busted
+      busted(dealer)
+    elsif winner == player
+      won(player)
+    elsif winner == dealer
+      won(dealer)
+    else
+      display_tie
+    end
   end
 
   def another_round?
@@ -278,43 +267,32 @@ class GameEngine
   end
 
   def reset_busted_states
-    @is_anyone_busted = false
     player.is_busted = false
     dealer.is_busted = false
   end
 
-  def player_hit?
-    ans = nil
-    puts '(h)it or (s)tay?'
-    loop do
-      ans = gets.chomp.downcase
-      break if %w[h s].include?(ans)
-
-      puts 'Please enter h or s.'
-    end
-    ans == 'h'
+  def won(participant)
+    increment_score(participant)
+    display_winner(participant)
   end
 
-  def player_turn
-    display_dealer_hand
-    loop do
-      display_full_hand(player)
-      display_hand_value(player)
-      player.check_for_bust
-      break if player.is_busted
+  def busted(participant)
+    other = if participant == player
+              dealer
+            elsif participant == dealer
+              player
+            end
 
-      player_hit? == true ? hit(player) : break
-    end
+    display_bust(participant)
+    increment_score(other)
   end
 
-  def dealer_turn
-    loop do
-      display_full_hand(dealer)
-      dealer.check_for_bust
-      break if dealer.is_busted
+  def winner
+    (21 - player.value) < (21 - dealer.value) ? player : dealer
+  end
 
-      dealer.value > 17 == false ? hit(dealer) : break
-    end
+  def increment_score(participant)
+    participant.score += 1
   end
 
   def hit(participant)
