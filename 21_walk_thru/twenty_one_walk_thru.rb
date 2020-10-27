@@ -71,8 +71,8 @@ class Participants
     number_of_aces = num_of_ace
     if number_of_aces.zero?
       non_ace_value
-    elsif non_ace_value < (10 - (number_of_aces - 1))
-      11 + (num_of_ace - 1)
+    elsif non_ace_value <= (10 - (number_of_aces - 1))
+      (11 + (num_of_ace - 1)) + non_ace_value
     else
       non_ace_value + number_of_aces
     end
@@ -93,7 +93,7 @@ class Participants
   end
 end
 
-# contains all the display messages
+# contains all the display messages except for display rules
 module Displayable
   private
 
@@ -141,10 +141,44 @@ module Pregameable
 
   def pre_game
     display_welcome_msg
+    display_rules if read_rules? == true
+    clear_screen(0.7)
   end
+
+  def read_rules?
+    ans = nil
+    puts 'Would you like to read the rules? (y/n)'
+    loop do
+      ans = gets.chomp.downcase
+      break if %w[y n].include? ans
+
+      puts 'Enter y or n.'
+    end
+    ans == 'y'
+  end
+
+  # rubocop:disable Metrics/MethodLength
+  def display_rules
+    puts <<~HEREDOC
+      The goal of the game is to get as close to 21 as possible without going over.
+      -If you go over 21 you are 'busted' and you lose the round.
+      -The value of cards two through ten are equal to the face value
+      -The value of the jack, king and queen are all equal to ten.
+      -The value of the ace may be one or ten.
+      -If the total card value is over 21 with the ace value of ten, 
+         then the ace value is one.
+      -Both you and the dealer starts with 2 cards.
+      Good luck!
+      Enter any key to continue.
+    HEREDOC
+    gets.chomp
+    system('clear') || system('cls')
+  end
+  # rubocop:enable Metrics/MethodLength
 end
 
 # the game engine orchestrates the game
+# rubocop:disable Metrics/ClassLength
 class GameEngine
   include Displayable
   include Pregameable
@@ -156,6 +190,7 @@ class GameEngine
     @dealer = Participants.new('Dealer')
   end
 
+  # rubocop:disable Metrics/MethodLength
   def play
     pre_game
     @player.name = player_name
@@ -170,6 +205,7 @@ class GameEngine
     end
     display_goodbye
   end
+  # rubocop:enable Metrics/MethodLength
 
   private
 
@@ -187,12 +223,13 @@ class GameEngine
 
   def deal_initial_hands
     deck.take_cards(2).each { |card| player.hand << card }
-    deck.take_cards(2). each { |card| dealer.hand << card }
+    deck.take_cards(2).each { |card| dealer.hand << card }
   end
 
   def player_turn
-    display_dealer_hand
+    clear_screen(0.7)
     loop do
+      display_dealer_hand
       display_full_hand(player)
       display_hand_value(player)
       player.check_for_bust
@@ -215,6 +252,7 @@ class GameEngine
   end
 
   def dealer_turn
+    clear_screen(0.8)
     loop do
       display_full_hand(dealer)
       dealer.check_for_bust
@@ -229,7 +267,10 @@ class GameEngine
     display_scores
   end
 
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize
   def round_evaluation
+    sleep 0.8
     if player.is_busted
       busted(player)
     elsif dealer.is_busted
@@ -242,6 +283,8 @@ class GameEngine
       display_tie
     end
   end
+  # rubocop:enable Metrics/MethodLength
+  # rubocop:enable Metrics/AbcSize
 
   def another_round?
     puts 'Would you like to play another round? (y/n)'
@@ -260,11 +303,13 @@ class GameEngine
     reset_busted_states
   end
 
+  # rubocop:disable Metrics/AbcSize
   def reset_deck
     player.hand.pop(player.hand.size).each { |card| deck.draw_pile << card }
     dealer.hand.pop(dealer.hand.size).each { |card| deck.draw_pile << card }
     deck.shuffle_deck
   end
+  # rubocop:enable Metrics/AbcSize
 
   def reset_busted_states
     player.is_busted = false
@@ -283,6 +328,7 @@ class GameEngine
               player
             end
 
+    clear_screen(0.85)
     display_bust(participant)
     increment_score(other)
   end
@@ -297,9 +343,16 @@ class GameEngine
 
   def hit(participant)
     deck.take_cards(1).each { |card| participant.hand << card }
+    clear_screen(0.9)
+  end
+
+  def clear_screen(num = 0)
+    sleep(num)
+    system('clear') || system('clr')
   end
 end
+# rubocop:enable Metrics/ClassLength
 
-test = GameEngine.new
+game = GameEngine.new
 
-test.play
+game.play
