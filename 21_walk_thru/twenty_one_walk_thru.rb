@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require 'pry'
-# frozen_string_literal: true
-
 # cards have a suite, a facename, and a value. they are collaberator object
 # to the deck
 class Card
@@ -182,7 +179,7 @@ end
 class GameEngine
   include Displayable
   include Pregameable
-  attr_accessor :deck, :player, :dealer, :is_anyone_busted
+  attr_accessor :deck, :player, :dealer,
 
   def initialize
     @deck = Deck.new
