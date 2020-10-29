@@ -179,12 +179,14 @@ end
 class GameEngine
   include Displayable
   include Pregameable
-  attr_accessor :deck, :player, :dealer
+  attr_accessor :deck, :player, :dealer, :who_is_busted, :has_won
 
   def initialize
     @deck = Deck.new
     @player = Participants.new('')
     @dealer = Participants.new('Dealer')
+    @who_is_busted = false
+    @has_won = false
   end
 
   # rubocop:disable Metrics/MethodLength
@@ -260,28 +262,44 @@ class GameEngine
   end
 
   def end_of_round
+    set_busted_state
+    set_win_state
     round_evaluation
     display_scores
   end
 
-  # rubocop:disable Metrics/MethodLength
-  # rubocop:disable Metrics/AbcSize
+  def set_win_state
+    @has_won = if winner == player
+                 player
+               elsif winner == dealer
+                 dealer
+               else
+                 false
+               end
+  end
+
+  def set_busted_state
+    @who_is_busted = if player.is_busted
+                       player
+                     elsif dealer.is_busted
+                       dealer
+                     else
+                       false
+                     end
+  end
+
   def round_evaluation
     sleep 0.8
-    if player.is_busted
-      busted(player)
-    elsif dealer.is_busted
-      busted(dealer)
-    elsif winner == player
-      won(player)
-    elsif winner == dealer
-      won(dealer)
-    else
-      display_tie
+    unless who_is_busted == false
+      busted(who_is_busted)
+      return
     end
+    unless has_won == false
+      won(has_won)
+      return
+    end
+    display_tie if player.value == dealer.value
   end
-  # rubocop:enable Metrics/MethodLength
-  # rubocop:enable Metrics/AbcSize
 
   def another_round?
     puts 'Would you like to play another round? (y/n)'
@@ -297,20 +315,20 @@ class GameEngine
 
   def reset
     reset_cards
-    reset_busted_states
+    reset_states
   end
 
-  # rubocop:disable Metrics/AbcSize
   def reset_cards
     @deck = Deck.new
     dealer.hand = []
     player.hand = []
   end
-  # rubocop:enable Metrics/AbcSize
 
-  def reset_busted_states
+  def reset_states
     player.is_busted = false
     dealer.is_busted = false
+    @who_is_busted = false
+    @has_won = false
   end
 
   def won(participant)
