@@ -179,7 +179,7 @@ end
 class GameEngine
   include Displayable
   include Pregameable
-  attr_accessor :deck, :player, :dealer,
+  attr_accessor :deck, :player, :dealer
 
   def initialize
     @deck = Deck.new
@@ -211,7 +211,7 @@ class GameEngine
     puts "What's your name?"
     loop do
       ans = gets.chomp.capitalize
-      break if ans.chars.all?(/\w/)
+      break if ans.chars.all?(/\w/) && ans.size >= 1
 
       puts 'only enter letters, numbers, or underscore'
     end
@@ -296,15 +296,15 @@ class GameEngine
   end
 
   def reset
-    reset_deck
+    reset_cards
     reset_busted_states
   end
 
   # rubocop:disable Metrics/AbcSize
-  def reset_deck
-    player.hand.pop(player.hand.size).each { |card| deck.draw_pile << card }
-    dealer.hand.pop(dealer.hand.size).each { |card| deck.draw_pile << card }
-    deck.shuffle_deck
+  def reset_cards
+    @deck = Deck.new
+    dealer.hand = []
+    player.hand = []
   end
   # rubocop:enable Metrics/AbcSize
 
